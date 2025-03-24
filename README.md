@@ -56,7 +56,65 @@ Refatorar e evoluir o protótipo utilizando boas práticas de arquitetura de sof
   - Arquitetura escolhida
   - Projeto em funcionamento
 
-## Infraestrutura
+## 🔧 Infraestrutura
 
+Este repositório define a infraestrutura como código (IaC) para o projeto do Hackathon FIAP, utilizando serviços da AWS com foco em escalabilidade, segurança e alta disponibilidade. Abaixo, os principais componentes descritos no README:
 
+---
+
+### ☸️ Amazon EKS (Elastic Kubernetes Service)
+- Serviço gerenciado de Kubernetes.
+- Elimina a gestão manual do control plane.
+- Suporta workloads em EC2, Fargate e Graviton.
+- Integração com IAM para controle de acesso.
+- Observabilidade com CloudWatch.
+- **Justificativa**: alta disponibilidade, escalabilidade e segurança nativa.
+
+---
+
+### 🔐 Amazon Cognito
+- Gerenciamento de autenticação e usuários.
+- Suporte a login com e-mail/senha ou redes sociais.
+- MFA (autenticação multifator) e triggers customizáveis.
+- Integra-se diretamente com API Gateway e IAM.
+- **Justificativa**: autenticação serverless, escalável e integrada com serviços AWS.
+
+---
+
+### 🌐 Amazon API Gateway
+- Serviço para expor APIs REST, HTTP e WebSocket.
+- Suporte nativo a autenticação via Cognito, IAM e JWT.
+- Recursos como caching, versionamento, CORS e throttling.
+- **Justificativa**: criação rápida de APIs com segurança e escalabilidade, totalmente gerenciado.
+
+---
+
+### 🧠 Amazon SageMaker
+- Plataforma para treinar, testar e hospedar modelos de Machine Learning.
+- Suporte a notebooks Jupyter e integração com CI/CD de ML.
+- **Justificativa**: simplifica o deployment de modelos, integrando com os demais serviços AWS.
+
+---
+
+### 📦 Amazon S3 (Simple Storage Service)
+- Armazenamento de objetos escalável e durável.
+- Utilizado para guardar vídeos, imagens extraídas e arquivos `.zip`.
+- Integração com CloudFront, Lambda, eventos e controle de acesso por políticas.
+- **Justificativa**: armazenamento seguro e escalável para dados não estruturados.
+
+---
+
+### 🐙 GitHub Actions
+- Utilizado para CI/CD da aplicação.
+- Automatiza testes, build, deploy e integração com a AWS.
+- **Justificativa**: pipeline ágil e versionado, totalmente integrado ao GitHub.
+
+---
+
+### ⚙️ Terraform
+- Ferramenta de IaC usada para provisionar todos os recursos.
+- Facilita a reprodutibilidade e versionamento da infraestrutura.
+- **Justificativa**: automatização e consistência no provisionamento de ambientes AWS.
+
+[Clique aqui para ser redirecionado para a wiki de infra com os detalhamentos e comparação entre as técnologias](https://github.com/fiap-8soat-tc-one/hackathon-fiap-iac)
 

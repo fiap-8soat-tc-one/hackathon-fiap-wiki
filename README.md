@@ -58,56 +58,119 @@ Refatorar e evoluir o protótipo utilizando boas práticas de arquitetura de sof
 
 ## 🔧 Infraestrutura
 
-Este repositório define a infraestrutura como código (IaC) para o projeto do Hackathon FIAP, utilizando serviços da AWS com foco em escalabilidade, segurança e alta disponibilidade. Abaixo, os principais componentes descritos no README:
-
----
-
-### ☸️ Amazon EKS (Elastic Kubernetes Service)
-- Serviço gerenciado de Kubernetes.
-- Elimina a gestão manual do control plane.
-- Suporta workloads em EC2, Fargate e Graviton.
-- Integração com IAM para controle de acesso.
-- Observabilidade com CloudWatch.
-- **Justificativa**: alta disponibilidade, escalabilidade e segurança nativa.
-
----
-
-### 🔐 Amazon Cognito
-- Gerenciamento de autenticação e usuários.
-- Suporte a login com e-mail/senha ou redes sociais.
-- MFA (autenticação multifator) e triggers customizáveis.
-- Integra-se diretamente com API Gateway e IAM.
-- **Justificativa**: autenticação serverless, escalável e integrada com serviços AWS.
+Este repositório define a infraestrutura como código (IaC) para o projeto do Hackathon FIAP, utilizando serviços da AWS com foco em escalabilidade, segurança, resiliência e alta disponibilidade. Abaixo, os principais componentes da arquitetura:
 
 ---
 
 ### 🌐 Amazon API Gateway
-- Serviço para expor APIs REST, HTTP e WebSocket.
+- Serviço para criar, publicar, manter, monitorar e proteger APIs em qualquer escala (REST, HTTP, WebSocket).
+- Atua como "porta de entrada" para as requisições dos usuários.
 - Suporte nativo a autenticação via Cognito, IAM e JWT.
-- Recursos como caching, versionamento, CORS e throttling.
-- **Justificativa**: criação rápida de APIs com segurança e escalabilidade, totalmente gerenciado.
+- Recursos como caching, versionamento, CORS e throttling (controle de picos).
+- **Justificativa**: Criação rápida de APIs seguras e escaláveis, totalmente gerenciado, integração nativa com Lambda e Cognito.
+
+---
+
+### 🔐 Amazon Cognito
+- Serviço de identidade para adicionar autenticação, autorização e gerenciamento de usuários a aplicações web e móveis.
+- Responsável pela **gestão dos usuários** (cadastro, login com e-mail/senha ou redes sociais) e pela **validação/gestão dos tokens** de autenticação/autorização.
+- Suporte a MFA (autenticação multifator) e fluxos customizáveis com triggers Lambda.
+- Integra-se diretamente com API Gateway e IAM para controle de acesso fino.
+- **Justificativa**: Solução serverless robusta para identidade, escalável, segura e integrada com outros serviços AWS, atendendo ao requisito de proteção por usuário e senha.
+
+---
+
+### λ AWS Lambda
+- Serviço de computação serverless que executa código em resposta a eventos.
+- Utilizado para funções específicas e pontuais, como:
+    - **Geração de URLs pré-assinadas (Presigned URLs)** para permitir que os usuários façam upload dos vídeos diretamente para o S3 de forma segura e temporária.
+    - **Geração de tokens específicos** (se necessário complementar a lógica do Cognito para acessos temporários a recursos, por exemplo).
+- Pode ser acionado por API Gateway, S3 Events, SQS, etc.
+- **Justificativa**: Execução sob demanda, escalabilidade automática, sem gerenciamento de servidores, ideal para tarefas pontuais e integrações, otimizando custos.
 
 ---
 
 ### 📦 Amazon S3 (Simple Storage Service)
-- Armazenamento de objetos escalável e durável.
-- Utilizado para guardar vídeos, imagens extraídas e arquivos `.zip`.
-- Integração com CloudFront, Lambda, eventos e controle de acesso por políticas.
-- **Justificativa**: armazenamento seguro e escalável para dados não estruturados.
+- Serviço de armazenamento de objetos altamente escalável, durável e seguro.
+- Utilizado para:
+    - Armazenar os **vídeos originais** enviados pelos usuários (via Presigned URL gerada pelo Lambda).
+    - Armazenar as **imagens extraídas** durante o processamento.
+    - Armazenar os **arquivos `.zip`** resultantes para download pelo usuário.
+- Integração com CloudFront (CDN), Lambda (eventos de criação de objeto), e controle de acesso fino por políticas IAM e de bucket.
+- **Justificativa**: Armazenamento virtualmente infinito, seguro, de baixo custo e escalável para dados não estruturados, central no fluxo de dados do projeto.
+
+---
+
+### 📨 Amazon SQS (Simple Queue Service)
+- Serviço de fila de mensagens totalmente gerenciado para desacoplar e escalar microsserviços, aplicações distribuídas e sistemas serverless.
+- Utilizado para a **troca de mensagens entre microsserviços**, garantindo o desacoplamento e a resiliência:
+    - Ex: O serviço que recebe o upload (via API Gateway/Lambda) envia uma mensagem para uma fila SQS contendo informações sobre o vídeo a ser processado.
+    - O(s) microsserviço(s) de processamento (rodando no EKS) consomem mensagens dessa fila para iniciar o trabalho.
+- **Justificativa**: Essencial para atender aos requisitos de processamento concorrente e resiliência a picos. Garante que nenhuma requisição seja perdida, desacopla o front-end do back-end de processamento, e facilita o escalonamento baseado em eventos (com KEDA).
+
+---
+
+### 💾 Amazon DynamoDB
+- Banco de dados NoSQL chave-valor e de documentos, totalmente gerenciado, que oferece performance de milissegundos de um dígito em qualquer escala.
+- Utilizado para **persistir e consultar o estado e metadados do processamento dos vídeos**:
+    - Armazena informações como ID do vídeo, ID do usuário, status (ex: `UPLOAD_CONCLUÍDO`, `PROCESSANDO`, `CONCLUÍDO`, `ERRO`), timestamp, link para o resultado no S3, etc.
+    - Permite a implementação do requisito de **listagem de status** dos vídeos por usuário.
+- **Justificativa**: Altíssima escalabilidade, performance consistente, modelo serverless (pay-as-you-go), ideal para controle de estado, metadados e catálogos que exigem baixa latência e alta concorrência.
+
+---
+
+### ☸️ Amazon EKS (Elastic Kubernetes Service)
+- Serviço gerenciado de Kubernetes que facilita a execução, gerenciamento e escalonamento de aplicações containerizadas na AWS.
+- Orquestra os contêineres dos microsserviços responsáveis pelo **processamento pesado dos vídeos**.
+- Elimina a necessidade de gerenciar o control plane do Kubernetes.
+- Suporta workloads em EC2, Fargate e Graviton.
+- Integração nativa com IAM para controle de acesso, CloudWatch para observabilidade, e ECR para imagens.
+- **Justificativa**: Plataforma robusta, escalável e padrão de mercado para orquestração de contêineres, garantindo alta disponibilidade e facilitando a gestão de microsserviços complexos.
+
+---
+
+### ☸️ Amazon ECR (Elastic Container Registry)
+- Registro de imagens de contêiner Docker totalmente gerenciado, seguro e escalável.
+- Utilizado para **armazenar as imagens Docker** dos microsserviços da aplicação (ex: serviço de processamento de vídeo).
+- Integra-se perfeitamente com EKS, Fargate, Lambda (imagens de contêiner) e pipelines de CI/CD.
+- **Justificativa**: Essencial para o fluxo de trabalho com contêineres, fornece um local seguro e gerenciado para as imagens, integrado ao ecossistema AWS e ao controle de acesso IAM.
+
+---
+
+### ☸️ KEDA (Kubernetes Event-driven Autoscaling)
+- Componente de escalonamento automático baseado em eventos para Kubernetes (instalado no cluster EKS).
+- Permite **escalar os pods dos microsserviços de processamento no EKS com base em eventos externos**, como o número de mensagens na fila SQS.
+- Pode escalar os pods de 0 (quando não há trabalho) até N (conforme a demanda), otimizando custos e garantindo performance.
+- **Justificativa**: Implementa o requisito de arquitetura escalável de forma eficiente e orientada a eventos. Garante que os recursos de processamento (pods no EKS) sejam provisionados apenas quando necessário, respondendo dinamicamente aos picos de upload de vídeos refletidos na fila SQS.
+
+---
+
+### ✉️ SendGrid (ou alternativa como AWS SES)
+- Plataforma de comunicação e entrega de e-mail na nuvem.
+- Utilizada para **notificar os usuários por e-mail** sobre o status do processamento do vídeo, especialmente em caso de erro, conforme requisito funcional.
+- Pode ser acionada por um serviço (ex: Lambda ou um microsserviço no EKS) ao final do processamento ou ao detectar um erro.
+- **Justificativa**: Serviço especializado e confiável para entrega de e-mails transacionais, com APIs fáceis de integrar, garantindo que as notificações cheguem à caixa de entrada do usuário. (AWS Simple Email Service - SES - é uma alternativa nativa da AWS).
 
 ---
 
 ### 🐙 GitHub Actions
-- Utilizado para CI/CD da aplicação.
-- Automatiza testes, build, deploy e integração com a AWS.
-- **Justificativa**: pipeline ágil e versionado, totalmente integrado ao GitHub.
+- Plataforma de CI/CD integrada ao GitHub.
+- Utilizada para **automatizar o pipeline de integração e entrega contínua (CI/CD)** da aplicação:
+    - Execução de testes automatizados.
+    - Build das imagens Docker e push para o ECR.
+    - Deploy das aplicações no EKS.
+    - Provisionamento/atualização da infraestrutura via Terraform.
+- **Justificativa**: Pipeline ágil, versionado junto ao código, totalmente integrado ao GitHub, facilitando a automação e a qualidade do processo de desenvolvimento e deploy.
 
 ---
 
 ### ⚙️ Terraform
-- Ferramenta de IaC usada para provisionar todos os recursos.
-- Facilita a reprodutibilidade e versionamento da infraestrutura.
-- **Justificativa**: automatização e consistência no provisionamento de ambientes AWS.
+- Ferramenta de Infraestrutura como Código (IaC) open-source.
+- Utilizada para **definir, provisionar e gerenciar toda a infraestrutura AWS** descrita acima de forma declarativa e versionada.
+- Garante a consistência, reprodutibilidade e automação da criação e atualização dos ambientes (desenvolvimento, produção, etc.).
+- **Justificativa**: Padrão de mercado para IaC multi-cloud, permite gerenciar a complexidade da infraestrutura de forma eficiente, segura e versionada no Git.
+
+---
 
 
 ## Arquitetura

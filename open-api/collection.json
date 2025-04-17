@@ -1,0 +1,196 @@
+{
+	"info": {
+		"_postman_id": "abc12a8a-316d-4c51-bf0d-3e8a3d21a77d",
+		"name": "FIAP Pós Tech - Hackaton",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "8299190"
+	},
+	"item": [
+		{
+			"name": "1 - Auth",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"id_token\", pm.response.json().id_token);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"jeancarlos.moreiradasilva@gmail.com\",\r\n    \"password\": \"@@Fiap123456!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://v88hk1js80.execute-api.us-east-1.amazonaws.com/dev/auth?x-amzn-apigateway-api-id=EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS",
+					"protocol": "https",
+					"host": [
+						"v88hk1js80",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"auth"
+					],
+					"query": [
+						{
+							"key": "x-amzn-apigateway-api-id",
+							"value": "EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2 - Get Presigned Url",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"presigned_url\", pm.response.json().url);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{id_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://v88hk1js80.execute-api.us-east-1.amazonaws.com/dev/presigned?x-amzn-apigateway-api-id=EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS",
+					"protocol": "https",
+					"host": [
+						"v88hk1js80",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"presigned"
+					],
+					"query": [
+						{
+							"key": "x-amzn-apigateway-api-id",
+							"value": "EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4 - Get Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"presigned_url\", pm.response.json().url);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{id_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://v88hk1js80.execute-api.us-east-1.amazonaws.com/dev/files/7600da76-83af-4d54-b0cf-81a725d785cc?x-amzn-apigateway-api-id=EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS",
+					"protocol": "https",
+					"host": [
+						"v88hk1js80",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"dev",
+						"files",
+						"7600da76-83af-4d54-b0cf-81a725d785cc"
+					],
+					"query": [
+						{
+							"key": "x-amzn-apigateway-api-id",
+							"value": "EqT8mgw41O16O5aF8Jhl29YsNWmZ6L0c2JnS9MvS"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3 - Upload",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "file",
+					"file": {
+						"src": "/C:/Users/jc_md/Desktop/b75187b4-55b5-4d9e-89fd-d49eafb78465.mp4"
+					}
+				},
+				"url": {
+					"raw": "{{presigned_url}}",
+					"host": [
+						"{{presigned_url}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
